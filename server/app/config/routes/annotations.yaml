@@ -1,0 +1,13 @@
+api:
+  prefix: /api
+  resource: ../../src/Application/Controller/
+  type: annotation
+
+gesdinet_jwt_refresh_token:
+  path:     /api/profile/refresh_token
+  defaults: { _controller: gesdinet.jwtrefreshtoken:refresh }
+  methods:    [POST]
+
+login:
+  path:     /api/profile/login
+  methods:    [POST]

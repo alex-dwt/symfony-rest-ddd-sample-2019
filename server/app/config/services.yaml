@@ -1,0 +1,89 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
+parameters:
+    locale: 'en'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        public: false       # Allows optimizing the container by removing unused services; this also means
+                            # fetching services directly from the container via $container->get() won't work.
+                            # The best practice is to be explicit about your dependencies anyway.
+
+    App\Application\Handler\:
+        resource: '../src/Application/Handler'
+        public: true
+    App\Application\Security\:
+        resource: '../src/Application/Security'
+    App\Application\Command\:
+        resource: '../src/Application/Command'
+    App\Application\Listener\:
+        resource: '../src/Application/Listener'
+    App\Application\Query\:
+        resource: '../src/Application/Query'
+    App\Application\Request\:
+        resource: '../src/Application/Request'
+        public: true
+    App\Application\Service\:
+        resource: '../src/Application/Service'
+        public: true
+    App\Infrastructure\:
+        resource: '../src/Infrastructure'
+    App\Domain\:
+        resource: '../src/Domain'
+        exclude: '../src/Domain/{User}/{User.php}'
+
+    # controllers are imported separately to make sure services can be injected
+    # as action arguments even if you don't extend any base controller class
+    App\Application\Controller\:
+        resource: '../src/Application/Controller'
+        tags: ['controller.service_arguments']
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    App\Application\Listener\System\KernelViewListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.view }
+
+#    App\Application\Listener\System\KernelControllerListener:
+#        tags:
+#            - { name: kernel.event_listener, event: kernel.controller }
+
+    App\Application\Listener\System\KernelExceptionListener:
+        bind:
+            $kernelEnv: '%kernel.environment%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception }
+
+    App\Application\Security\LoginSuccessListener:
+        tags:
+            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, priority: -200, method: onAuthenticationSuccessResponse }
+            - { name: kernel.event_listener, event: lexik_jwt_authentication.on_jwt_created, method: onJWTCreated }
+
+    app.security_users_provider:
+        class: App\Application\Security\UserProvider
+
+    App\Application\Event\EventsDispatcher:
+        public: true
+
+    app.jwt_token_authenticator:
+        autowire: false
+        autoconfigure: false
+        public: false
+        class: App\Application\Security\JwtTokenAuthenticator
+        parent: lexik_jwt_authentication.jwt_token_authenticator
+
+    App\Infrastructure\Persistence\Doctrine\:
+        resource: '../src/Infrastructure/Persistence/Doctrine'
+        tags: ['app.doctrine_repository']
+
+    App\Domain\User\UserRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineUserRepository'
+
+    App\Application\Listener\PersistenceListener:
+        arguments: [!tagged app.doctrine_repository]

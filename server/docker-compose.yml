@@ -1,0 +1,48 @@
+version: "2.2"
+
+services:
+    php:
+        image: alex_dwt/bets-php:latest
+        build:
+            context: '.'
+            dockerfile: 'php/Dockerfile'
+        networks:
+            - webnet
+        environment:
+            - DATABASE_URL
+            - RABBITMQ_USER
+            - RABBITMQ_PASS
+            - RABBITMQ_HOST
+            - APP_ENV
+            - APP_SECRET
+            - MAILER_URL
+            - JWT_PASSPHRASE
+            - PHPSTORM_HOST_IP
+            - PARSER_PASSWORD
+            - HOST_NAME
+
+    front:
+        image: alex_dwt/bets-front:latest
+        build: 'nginx'
+        ports:
+              - 80:80
+        networks:
+              - webnet
+
+    database:
+        image: mysql:5.7.23
+        volumes:
+            - msdata:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=${DB_PASS}
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PASS}
+            - MYSQL_DATABASE=${DB_NAME}
+        networks:
+            - webnet
+
+networks:
+  webnet:
+
+volumes:
+   msdata:

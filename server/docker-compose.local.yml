@@ -1,0 +1,10 @@
+version: "2.2"
+
+services:
+    php:
+        volumes:
+            - ./app:/app
+
+    database:
+        volumes:
+            - .:/server-app
